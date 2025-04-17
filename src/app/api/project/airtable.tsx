@@ -18,9 +18,22 @@ export async function getAirtableProjects(): Promise<Project[]> {
   }));
 }
 
+export async function getAirtableProjectById(id: string): Promise<Project | null> {
+  try {
+    const record = await base("tblRS0XAzWR6rvn6o").find(id);
+    return {
+      id: record.id,
+      fields: record.fields as Project["fields"],
+    };
+  } catch (error) {
+    console.error("Error fetching project by ID:", error);
+    return null;
+  }
+}
+
 export async function insertAirtableProject(project: Project) {
 
-  const {Name, Description,Technologies, Promotion, Category } = project.fields
+  const {Name, Description,Technologies, Promotion, Category, Students} = project.fields
 
   const createProject = await base.table("tblRS0XAzWR6rvn6o").create({
     Name,
@@ -28,6 +41,7 @@ export async function insertAirtableProject(project: Project) {
     Technologies,
     Promotion,
     Category,
+    Students,
   }, {typecast: true});
 
   if (!createProject.id) return {};
@@ -47,7 +61,9 @@ export async function updateAirtableProject(project: UpdateProject) {
     PublishDate, 
     Likes, 
     Category, 
-    Students } = project.fields
+    Students,
+    AdminComment,
+   } = project.fields
 
 
   const updateProject = await base
@@ -64,7 +80,7 @@ export async function updateAirtableProject(project: UpdateProject) {
     Likes,
     Category,  
     Students,
-    
+    AdminComment
   }, {typecast: true});
  
   if (!updateProject.id) {
@@ -75,19 +91,60 @@ export async function updateAirtableProject(project: UpdateProject) {
   }
 }
 
-export async function deleteAirtableProject(projectId: string) {
+export async function toggleDeleteAirtableProject(projectId: string) {
   try {
-    const deletedProject = await base
-      .table("tblRS0XAzWR6rvn6o")
-      .destroy([projectId]);
+    const project = await base.table("tblRS0XAzWR6rvn6o").find(projectId);
 
-    if (deletedProject) {
-      return { success: true, id: projectId };
+    if (!project) {
+      return { success: false, message: "Project not found" };
+    }
+
+    const currentStatus = typeof project.fields.active === "string" 
+      ? project.fields.active.toLowerCase() === "true" 
+      : true;
+
+    const newStatus = !currentStatus;
+
+    const updatedProject = await base.table("tblRS0XAzWR6rvn6o").update(projectId, {
+      Active: newStatus.toString(),
+    }, {typecast: true});
+
+    if (updatedProject) {
+      return {
+        success: true,
+        id: projectId,
+        newStatus: newStatus.toString(),
+        message: newStatus ? "Project restored" : "Project deleted",
+      };
     } else {
-      return { success: false, message: "Project not found or could not be deleted" };
+      return { success: false, message: "Project update failed" };
     }
   } catch (error) {
-    console.error("Error deleting project:", error);
-    return { success: false,  error};
+    console.error("Error updating project:", error);
+    return { success: false, error };
+  }
+}
+
+
+
+export async function searchProjectsByKeyword(keyword: string): Promise<Project[]> {
+  try {
+    const formula = `SEARCH("${keyword}", {Keywords})`;
+
+    const records = await base<Project["fields"]>("tblRS0XAzWR6rvn6o")
+      .select({
+        filterByFormula: formula,
+      })
+      .all();
+
+    return records.map((record) => ({
+      id: record.id,
+      fields: {
+        ...record.fields,
+      },
+    }));
+  } catch (error) {
+    console.error("Error searching projects by keyword:", error);
+    return [];
   }
 }

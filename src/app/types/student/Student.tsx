@@ -4,6 +4,6 @@ export type Student = {
     FirstName: string;
     LastName: string;
     Email: string;
-    Projects: string[];
+    Projects?: string[];
   };
 };

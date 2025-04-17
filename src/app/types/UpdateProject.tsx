@@ -2,8 +2,8 @@
 export type UpdateProject = {
   id: string;
   fields: {
-    Name?: string;
-    Description?: string; 
+    Name: string;
+    Description: string; 
     Technologies?: string[];
     Link?: string;
     Visuels?: string[];
@@ -13,5 +13,6 @@ export type UpdateProject = {
     Likes?: number;
     Category?: string[];
     Students?: string[];
+    AdminComment?: string
   };
 };

@@ -1,6 +1,6 @@
 "use server";
 
-import { Student } from "airtable-api/app/types/student/student";
+import { Student } from "airtable-api/app/types/student/Student";
 import { UpdateStudent } from "airtable-api/app/types/student/UpdateStudent";
 import { base } from "../ConfigBaseAirtable";
 
@@ -16,6 +16,21 @@ export async function getAirtableStudents(): Promise<Student[]> {
     },
   }));
 }
+
+
+export async function getAirtableStudentById(id: string): Promise<Student | null> {
+  try {
+    const record = await base("tblXDgwMSOKmL9d1h").find(id);
+    return {
+      id: record.id,
+      fields: record.fields as Student["fields"],
+    };
+  } catch (error) {
+    console.error("Error fetching student by ID:", error);
+    return null;
+  }
+}
+
 
 export async function insertAirtableStudent(student: Student) {
   const { FirstName, LastName, Email } = student.fields;
@@ -36,7 +51,7 @@ export async function insertAirtableStudent(student: Student) {
 }
 
 export async function updateAirtableStudent(student: UpdateStudent) {
-  const { FirstName, LastName, Email, Projects } = student.fields;
+  const { FirstName, LastName, Email } = student.fields;
 
   const updateStudent = await base
     .table("tblXDgwMSOKmL9d1h")
@@ -44,8 +59,7 @@ export async function updateAirtableStudent(student: UpdateStudent) {
       FirstName,
       LastName,
       Email,
-      Projects,
-    }, { typecast: true });
+    });
 
   if (!updateStudent.id) {
     console.log(updateStudent);

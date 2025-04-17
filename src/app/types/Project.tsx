@@ -15,5 +15,7 @@ export type Project = {
     Keywords ?: string[];
     Category: string[];
     Students ?: string[];
+    AdminComment?: string
+    Active?: string
   };
 };
